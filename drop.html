@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Upload Portal</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-base: #0a0a0a;
+            --bg-surface: rgba(18, 18, 18, 0.85);
+            --bg-card: rgba(26, 26, 26, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --border-focus: rgba(255, 255, 255, 0.3);
+            --primary: #ffffff;
+            --primary-glow: rgba(255, 255, 255, 0.15);
+            --primary-gradient: linear-gradient(135deg, #ffffff, #8c8c8c);
+            --text-main: #f5f5f5;
+            --text-muted: #a3a3a3;
+            --status-pending: #888888;
+            --status-uploading: #38bdf8;
+            --status-success: #4ade80;
+            --status-error: #f87171;
+            --status-paused: #fbbf24;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at 50% 0%, #1c1c1c, var(--bg-base) 100%);
+            color: var(--text-main);
+            font-family: 'Outfit', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 860px;
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+            background: linear-gradient(120deg, #fff, var(--text-muted));
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 400;
+        }
+
+        .badge-mode {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 18px;
+            min-height: 190px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.015);
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .dropzone:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.035);
+            box-shadow: 0 0 24px rgba(255, 255, 255, 0.05);
+        }
+
+        .dropzone.drag {
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 32px rgba(255, 255, 255, 0.12);
+        }
+
+        .dropzone svg {
+            width: 44px;
+            height: 44px;
+            stroke: var(--text-muted);
+            margin-bottom: 14px;
+            transition: all 0.3s;
+        }
+
+        .dropzone:hover svg {
+            stroke: var(--primary);
+            transform: translateY(-4px);
+        }
+
+        .dropzone span {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .dropzone p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        button {
+            border: none;
+            padding: 13px 22px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: #000000;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            flex-grow: 1;
+            font-weight: 700;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background: #ffffff;
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-danger {
+            background: rgba(248, 113, 113, 0.12);
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.3);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: rgba(248, 113, 113, 0.2);
+            border-color: rgba(248, 113, 113, 0.5);
+        }
+
+        button:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Queue & File List Styling */
+        #queue-section {
+            margin-top: 10px;
+            margin-bottom: 24px;
+        }
+
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .queue-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .queue-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+
+        .queue-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        #file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 360px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        #file-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #file-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        .file-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px 18px;
+            transition: all 0.2s ease;
+        }
+
+        .file-card:hover {
+            border-color: var(--border-focus);
+            background: rgba(32, 32, 32, 0.8);
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+
+        .file-meta {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .file-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-path {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .file-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .file-size-badge {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .type-badge {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d4d4d4;
+        }
+
+        .type-badge.multipart {
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.25);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .type-badge.direct {
+            color: #a78bfa;
+            border-color: rgba(167, 139, 250, 0.25);
+            background: rgba(167, 139, 250, 0.08);
+        }
+
+        .status-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 9px;
+            border-radius: 6px;
+            text-transform: capitalize;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-pending {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--status-pending);
+        }
+
+        .badge-uploading {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--status-uploading);
+        }
+
+        .badge-committing {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+        }
+
+        .badge-paused {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--status-paused);
+        }
+
+        .badge-success {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--status-success);
+        }
+
+        .badge-error {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--status-error);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--text-muted);
+        }
+
+        .progress-bar.uploading {
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+        }
+
+        .progress-bar.committing {
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+        }
+
+        .progress-bar.paused {
+            background: var(--status-paused);
+        }
+
+        .progress-bar.success {
+            background: var(--status-success);
+        }
+
+        .progress-bar.error {
+            background: var(--status-error);
+        }
+
+        .error-message {
+            color: var(--status-error);
+            font-size: 11px;
+            margin-top: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Console Output Box */
+        .console-wrapper {
+            margin-top: 24px;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        #console-box {
+            background: #060606;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 14px;
+            max-height: 160px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        #console-box::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #console-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        .console-log-entry {
+            margin-bottom: 4px;
+            line-height: 1.5;
+            word-break: break-all;
+            color: #d4d4d4;
+        }
+
+        .console-log-entry.info {
+            color: #93c5fd;
+        }
+
+        .console-log-entry.success {
+            color: #86efac;
+        }
+
+        .console-log-entry.error {
+            color: #fca5a5;
+        }
+
+        .console-log-entry.warn {
+            color: #fde047;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #141414;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            max-width: 480px;
+            width: 100%;
+            padding: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .modal-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .modal-desc strong {
+            color: var(--text-main);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 16px 10px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .actions {
+                flex-wrap: wrap;
+            }
+
+            .actions button {
+                flex: 1 1 45%;
+            }
+
+            .btn-primary {
+                flex: 1 1 100% !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-section">
+            <div>
+                <h1>Storage Upload</h1>
+                <div class="subtitle">Direct S3 & Multipart chunked uploads to MinIO.</div>
+            </div>
+            <div class="badge-mode" id="status-mode">Ready</div>
+        </div>
+
+        <div id="main-app-content">
+            <div class="dropzone" id="dropzone" onclick="selectFiles()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                </svg>
+                <span>Drag & Drop files or folders here</span>
+                <p>Auto-switches to Multipart Upload for files &ge; 100MB</p>
+            </div>
+
+            <div class="actions">
+                <button id="filesInputBtn" class="btn-secondary" onclick="selectFiles()">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Add Files
+                </button>
+
+                <button id="folderInputBtn" class="btn-secondary" onclick="selectFolder()">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    Add Folder
+                </button>
+
+                <button id="clearBtn" class="btn-secondary" onclick="clearQueue()" disabled>
+                    Clear
+                </button>
+
+                <button id="uploadButton" class="btn-primary" onclick="upload()" disabled>
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Start Upload
+                </button>
+            </div>
+
+            <input hidden id="filesInput" type="file" multiple>
+            <input hidden id="folderInput" type="file" multiple webkitdirectory>
+
+            <!-- Queue Section -->
+            <div id="queue-section" style="display: none;">
+                <div class="queue-header">
+                    <div class="queue-title">
+                        Upload Queue
+                        <span id="queue-count" class="queue-count">0 files</span>
+                    </div>
+                    <div class="queue-actions">
+                        <span id="queue-total-size" style="font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">0 Bytes</span>
+                    </div>
+                </div>
+                <div id="file-list"></div>
+            </div>
+
+            <!-- Console Log Box -->
+            <div class="console-wrapper">
+                <div class="console-header">
+                    <span>Activity Log</span>
+                    <span style="cursor: pointer; text-decoration: underline;" onclick="clearLogs()">Clear</span>
+                </div>
+                <div id="console-box">
+                    <div id="console-logs"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conflict Resolution Modal -->
+    <div class="modal-overlay" id="conflict-modal">
+        <div class="modal-card">
+            <div class="modal-title" id="conflict-modal-title">Conflict Detected</div>
+            <div class="modal-desc" id="conflict-modal-desc">A resource with this name already exists in the destination folder.</div>
+            <div class="modal-actions">
+                <button id="conflict-btn-cancel" class="btn-danger">Cancel</button>
+                <button id="conflict-btn-replace" class="btn-secondary">Replace</button>
+                <button id="conflict-btn-keepboth" class="btn-primary">Keep Both</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Threshold matching backend logic (10240 * 10240 = 100MB)
+        const MULTIPART_THRESHOLD = 10240 * 10240;
+        const S3_MIN_PART_SIZE = 5 * 1024 * 1024; // 5MB — S3 hard minimum
+
+        // State Management
+        let allFilesFolderId = 1;
+        const filesList = []; // Array of items: { file, path, status, progress, error, objectKey, type, uploadId, urls, resumeMeta }
+        let authToken = localStorage.getItem('storage_id_token') || "";
+        let resumeSessions = []; // Incomplete upload sessions fetched from server on page load
+
+        const dropzone = document.getElementById("dropzone");
+        const uploadButton = document.getElementById("uploadButton");
+        const clearBtn = document.getElementById("clearBtn");
+        const filesInput = document.getElementById("filesInput");
+        const folderInput = document.getElementById("folderInput");
+        const consoleLogs = document.getElementById("console-logs");
+        const consoleBox = document.getElementById("console-box");
+        const statusModeBadge = document.getElementById("status-mode");
+
+        window.addEventListener('load', async () => {
+            allFilesFolderId = 1;
+            render();
+            writeLog("Portal initialized. Ready to accept files.");
+            await fetchResumeSessions();
+        });
+
+        async function fetchResumeSessions() {
+            try {
+                const headers = {};
+                if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+                const resp = await fetch('http://localhost:8000/data/resume', { headers });
+                if (!resp.ok) return;
+                resumeSessions = await resp.json();
+                if (resumeSessions.length > 0) {
+                    writeLog(`Found ${resumeSessions.length} incomplete upload(s). Re-add the same file(s) to resume.`, 'warn');
+                }
+            } catch (e) { /* silent — server may not be ready */ }
+        }
+
+        // Drag & Drop
+        dropzone.addEventListener("dragover", e => {
+            e.preventDefault();
+            dropzone.classList.add("drag");
+        });
+
+        dropzone.addEventListener("dragleave", () => {
+            dropzone.classList.remove("drag");
+        });
+
+        dropzone.addEventListener("drop", e => {
+            e.preventDefault();
+            dropzone.classList.remove("drag");
+            if (e.dataTransfer.files.length > 0) {
+                addFiles(e.dataTransfer.files);
+            }
+        });
+
+        function selectFiles() {
+            filesInput.click();
+        }
+
+        function selectFolder() {
+            folderInput.click();
+        }
+
+        filesInput.addEventListener("change", e => {
+            if (e.target.files.length > 0) {
+                addFiles(e.target.files);
+                e.target.value = "";
+            }
+        });
+
+        folderInput.addEventListener("change", e => {
+            if (e.target.files.length > 0) {
+                addFiles(e.target.files);
+                e.target.value = "";
+            }
+        });
+
+        function clearQueue() {
+            filesList.length = 0;
+            filesInput.value = "";
+            folderInput.value = "";
+            render();
+            clearLogs();
+            writeLog("Upload queue cleared.");
+        }
+
+        function addFiles(fileListObject) {
+            let addedCount = 0;
+            for (let i = 0; i < fileListObject.length; i++) {
+                const file = fileListObject[i];
+
+                // Ignore macOS system metadata files
+                if (file.name === '.DS_Store' || file.name.startsWith('._')) {
+                    continue;
+                }
+
+                const path = file.webkitRelativePath || file.name;
+
+                // Replace if already in queue and not currently uploading
+                const existingIndex = filesList.findIndex(item => item.path === path);
+                if (existingIndex !== -1) {
+                    const existingItem = filesList[existingIndex];
+                    if (existingItem.status === 'success' || existingItem.status === 'error' || existingItem.status === 'pending') {
+                        filesList.splice(existingIndex, 1);
+                    } else {
+                        continue;
+                    }
+                }
+
+                const isMultipart = file.size >= MULTIPART_THRESHOLD;
+
+                filesList.push({
+                    file: file,
+                    path: path,
+                    type: isMultipart ? 'multipart' : 'direct',
+                    status: 'pending', // pending | uploading | committing | paused | success | error
+                    progress: 0,
+                    error: null,
+                    objectKey: null,
+                    uploadId: null,
+                    urls: []
+                });
+                addedCount++;
+            }
+            writeLog(`Added ${addedCount} file(s) to queue.`);
+            render();
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function render() {
+            const queueSection = document.getElementById("queue-section");
+            const fileListContainer = document.getElementById("file-list");
+            fileListContainer.innerHTML = "";
+
+            if (filesList.length === 0) {
+                queueSection.style.display = "none";
+                clearBtn.disabled = true;
+                uploadButton.disabled = true;
+                statusModeBadge.textContent = "Ready";
+                statusModeBadge.style.color = "var(--text-muted)";
+                return;
+            }
+
+            queueSection.style.display = "block";
+            clearBtn.disabled = false;
+
+            const totalBytes = filesList.reduce((acc, curr) => acc + curr.file.size, 0);
+            document.getElementById("queue-count").textContent = `${filesList.length} file${filesList.length === 1 ? '' : 's'}`;
+            document.getElementById("queue-total-size").textContent = formatBytes(totalBytes);
+
+            const isUploading = filesList.some(f => f.status === 'uploading' || f.status === 'committing' || f.status === 'paused');
+            const hasPendingOrError = filesList.some(f => f.status === 'pending' || f.status === 'error');
+
+            uploadButton.disabled = !hasPendingOrError || isUploading;
+
+            if (isUploading) {
+                statusModeBadge.textContent = "Uploading...";
+                statusModeBadge.style.color = "var(--status-uploading)";
+            } else {
+                statusModeBadge.textContent = `${filesList.length} Queued`;
+                statusModeBadge.style.color = "var(--text-main)";
+            }
+
+            filesList.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "file-card";
+
+                let badgeClass = "badge-pending";
+                let statusLabel = "Pending";
+                if (item.status === 'uploading') {
+                    badgeClass = "badge-uploading";
+                    statusLabel = `Uploading (${item.progress}%)`;
+                } else if (item.status === 'committing') {
+                    badgeClass = "badge-committing";
+                    statusLabel = "Finalizing...";
+                } else if (item.status === 'paused') {
+                    badgeClass = "badge-paused";
+                    statusLabel = "Paused (Offline)";
+                } else if (item.status === 'success') {
+                    badgeClass = "badge-success";
+                    statusLabel = "Completed";
+                } else if (item.status === 'error') {
+                    badgeClass = "badge-error";
+                    statusLabel = "Failed";
+                }
+
+                const typeBadgeClass = item.type === 'multipart' ? 'type-badge multipart' : 'type-badge direct';
+                const typeLabel = item.type === 'multipart' ? 'Multipart' : 'Direct';
+
+                card.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-meta">
+                            <span class="file-name" title="${item.file.name}">${item.file.name}</span>
+                            <span class="file-path" title="${item.path}">${item.path}</span>
+                        </div>
+                        <div class="file-badges">
+                            <span class="${typeBadgeClass}">${typeLabel}</span>
+                            <span class="file-size-badge">${formatBytes(item.file.size)}</span>
+                            <span class="status-badge ${badgeClass}">${statusLabel}</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar ${item.status}" style="width: ${item.progress}%"></div>
+                    </div>
+                    ${item.error ? `<div class="error-message">Error: ${item.error}</div>` : ''}
+                `;
+
+                fileListContainer.appendChild(card);
+            });
+        }
+
+        function writeLog(message, type = 'default') {
+            const entry = document.createElement("div");
+            entry.className = `console-log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            consoleLogs.appendChild(entry);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function clearLogs() {
+            consoleLogs.innerHTML = "";
+        }
+
+        function waitForNetworkOnline() {
+            if (navigator.onLine) {
+                return Promise.resolve();
+            }
+            return new Promise(resolve => {
+                const listener = () => {
+                    window.removeEventListener('online', listener);
+                    resolve();
+                };
+                window.addEventListener('online', listener);
+            });
+        }
+
+        async function resolveDestinationPath(pathStr, startFolderId = 1) {
+            const parts = pathStr.split('/').map(p => p.trim()).filter(Boolean);
+            if (parts[0] === 'All Files') {
+                parts.shift();
+            }
+
+            let currentId = startFolderId;
+            let i = 0;
+
+            for (; i < parts.length; i++) {
+                const part = parts[i];
+                try {
+                    const headers = {};
+                    if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+
+                    const response = await fetch(`http://localhost:8000/data/${currentId}`, { headers });
+                    if (!response.ok) break;
+
+                    const data = await response.json();
+                    if (data && data.folders) {
+                        const foundFolder = data.folders.find(f => f.name.toLowerCase() === part.toLowerCase());
+                        if (foundFolder) {
+                            currentId = foundFolder.id;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                } catch (e) {
+                    console.error(`Error resolving path part "${part}":`, e);
+                    break;
+                }
+            }
+
+            const remainingPath = parts.slice(i).join('/');
+            return { parentId: currentId, remainingPath };
+        }
+
+        const getFileFolder = (filePath) => {
+            const lastSlash = filePath.lastIndexOf('/');
+            return lastSlash !== -1 ? filePath.substring(0, lastSlash) : "";
+        };
+
+        // Upload Orchestration
+        async function upload() {
+            const destinationPath = "/All Files";
+            const pendingItems = filesList.filter(f => f.status === 'pending' || f.status === 'error');
+            if (pendingItems.length === 0) return;
+
+            toggleInputs(true);
+            writeLog(`Initiating upload batch for ${pendingItems.length} file(s)...`, 'info');
+
+            // 1. Resolve destination path
+            const { parentId, remainingPath } = await resolveDestinationPath(destinationPath, allFilesFolderId);
+            writeLog(`Destination parent folder ID: ${parentId}. Remaining path: "${remainingPath || 'root'}"`, 'info');
+
+            // 2. Format upload payload matching backend expectations
+            const filesToUpload = pendingItems.map(item => {
+                const fileFolder = getFileFolder(item.path);
+                const combinedFolder = remainingPath ? (fileFolder ? remainingPath + '/' + fileFolder : remainingPath) : fileFolder;
+                const relative_path = combinedFolder ? combinedFolder + '/' + item.file.name : item.file.name;
+                item.targetRelativePath = relative_path;
+
+                return {
+                    name: item.file.name,
+                    filename: item.file.name,
+                    size: item.file.size,
+                    relative_path: relative_path
+                };
+            });
+
+            // 3. Initialize upload session with backend
+            let responseMetas = [];
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+                const initResponse = await fetch(`http://localhost:8000/data/upload_init`, {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify(filesToUpload)
+                });
+
+                if (initResponse.status === 409 || initResponse.status === 401) {
+                    writeLog("File/Folder conflict detected. Awaiting user resolution...", 'warn');
+                    const isFolder = initResponse.status === 401;
+                    const conflictTitle = isFolder ? "Folder Conflict" : (filesToUpload[0]?.name || "File Conflict");
+                    const choice = await showConflictModal(conflictTitle, null, isFolder);
+                    if (choice === 'cancel') {
+                        throw new Error("Conflict resolution cancelled by user");
+                    }
+                    writeLog(`Retrying upload with action: "${choice}"...`, 'info');
+
+                    const retryResponse = await fetch(`http://localhost:8000/data/upload_init`, {
+                        method: "POST",
+                        headers: headers,
+                        body: JSON.stringify(filesToUpload)
+                    });
+
+                    if (!retryResponse.ok) {
+                        throw new Error(`Retry failed with status ${retryResponse.status}`);
+                    }
+                    responseMetas = await retryResponse.json();
+                } else if (!initResponse.ok) {
+                    throw new Error(`Init failed with status ${initResponse.status}`);
+                } else {
+                    responseMetas = await initResponse.json();
+                }
+            } catch (err) {
+                writeLog(`Upload initialization failed: ${err.message}`, 'error');
+                pendingItems.forEach(item => {
+                    item.status = 'error';
+                    item.error = err.message || "Backend init failed";
+                });
+                render();
+                toggleInputs(false);
+                return;
+            }
+
+            // 4. Distinguish between ready uploads and conflicts
+            const validQueue = [];
+            const conflictingItems = [];
+
+            responseMetas.forEach((meta, index) => {
+                const item = pendingItems[index];
+                // Check if this file has upload instructions (direct or multipart)
+                if (meta.URL || meta.upload_url || meta.URL_part || meta.urls || meta.upload === 'direct' || meta.upload === 'multipart' || meta.type === 'direct' || meta.type === 'multipart') {
+                    validQueue.push({ item, meta });
+                } else {
+                    conflictingItems.push(item);
+                }
+            });
+
+            // 5. Execution function for direct or multipart upload
+            const executeFileUpload = async (item, meta, actionUsed) => {
+                let currentMeta = meta;
+                item.objectKey = currentMeta.object_key;
+                item.type = currentMeta.upload || currentMeta.type || (currentMeta.URL_part || currentMeta.urls ? 'multipart' : 'direct');
+                item.status = 'uploading';
+                item.progress = 0;
+                item.error = null;
+                render();
+
+                const isDirect = (item.type === 'direct' || currentMeta.URL || currentMeta.upload_url);
+
+                if (isDirect) {
+                    // DIRECT UPLOAD (Single PUT to presigned URL)
+                    writeLog(`[${item.file.name}] Direct upload to MinIO (${formatBytes(item.file.size)})...`, 'info');
+                    let uploadSuccess = false;
+
+                    while (!uploadSuccess) {
+                        try {
+                            const putUrl = currentMeta.URL || currentMeta.upload_url || (currentMeta.urls && currentMeta.urls[0] && currentMeta.urls[0].upload_url);
+                            if (!putUrl) throw new Error("No upload URL provided for direct upload");
+
+                            await uploadFileXHR(putUrl, item.file, (pct) => {
+                                item.progress = pct;
+                                render();
+                            });
+
+                            item.status = 'success';
+                            item.progress = 100;
+                            render();
+                            writeLog(`[${item.file.name}] Successfully uploaded!`, 'success');
+                            uploadSuccess = true;
+                        } catch (err) {
+                            if (!navigator.onLine || err.message === "Network connection lost" || err.message.toLowerCase().includes("network")) {
+                                writeLog(`[${item.file.name}] Network offline. Upload paused...`, 'warn');
+                                item.status = 'paused';
+                                render();
+
+                                await waitForNetworkOnline();
+                                writeLog(`[${item.file.name}] Network restored. Re-initializing direct upload...`, 'info');
+
+                                try {
+                                    const headers = { 'Content-Type': 'application/json' };
+                                    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+                                    const initRetry = await fetch(`http://localhost:8000/data/upload_init`, {
+                                        method: "POST",
+                                        headers: headers,
+                                        body: JSON.stringify([{
+                                            filename: item.file.name,
+                                            size: item.file.size
+                                        }])
+                                    });
+
+                                    if (!initRetry.ok) throw new Error(`Re-init failed (${initRetry.status})`);
+                                    const newMetas = await initRetry.json();
+                                    if (newMetas && newMetas.length > 0) {
+                                        currentMeta = newMetas[0];
+                                        item.objectKey = currentMeta.object_key;
+                                        item.status = 'uploading';
+                                        item.progress = 0;
+                                        render();
+                                    } else {
+                                        throw new Error("No metadata returned on retry");
+                                    }
+                                } catch (reErr) {
+                                    item.status = 'error';
+                                    item.error = reErr.message;
+                                    render();
+                                    writeLog(`[${item.file.name}] Re-init failed: ${reErr.message}`, 'error');
+                                    break;
+                                }
+                            } else {
+                                item.status = 'error';
+                                item.error = err.message || "Direct upload failed";
+                                render();
+                                writeLog(`[${item.file.name}] Failed: ${item.error}`, 'error');
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // MULTIPART UPLOAD (Chunked PUTs to presigned part URLs)
+                    const urls = currentMeta.URL_part || currentMeta.urls || [];
+                    const uploadId = currentMeta.upload_id;
+                    const totalParts = urls.length;
+
+                    writeLog(`[${item.file.name}] Multipart upload started: ${totalParts} chunks (${formatBytes(item.file.size)})...`, 'info');
+
+                    // Compute part size matching backend formula: max(file.size/100, min(2289*2289, 10240*10240))
+                    const partSize = currentMeta.part_size || Math.max(Math.floor(item.file.size / 100), S3_MIN_PART_SIZE);
+                    const completedParts = [];
+                    const uploadedBytes = new Array(totalParts).fill(0);
+
+                    let uploadSuccess = false;
+
+                    while (!uploadSuccess) {
+                        try {
+                            for (let i = 0; i < urls.length; i++) {
+                                const partInfo = urls[i];
+                                const partNum = partInfo.part_number;
+
+                                // Skip if already uploaded
+                                if (completedParts.some(p => p.partnumber === partNum)) {
+                                    continue;
+                                }
+
+                                const start = (partNum - 1) * partSize;
+                                const end = Math.min(item.file.size, start + partSize);
+                                const chunk = item.file.slice(start, end);
+                                const chunkSize = end - start;
+
+                                const etag = await uploadPartXHR(partInfo.upload_url, chunk, (bytesLoaded) => {
+                                    uploadedBytes[i] = bytesLoaded;
+                                    const totalLoaded = uploadedBytes.reduce((a, b) => a + b, 0);
+                                    item.progress = Math.min(99, Math.round((totalLoaded / item.file.size) * 100));
+                                    render();
+                                });
+
+                                uploadedBytes[i] = chunkSize;
+                                completedParts.push({
+                                    partnumber: partNum,
+                                    etag: etag
+                                });
+
+                                const totalLoaded = uploadedBytes.reduce((a, b) => a + b, 0);
+                                item.progress = Math.min(99, Math.round((totalLoaded / item.file.size) * 100));
+                                render();
+                            }
+
+                            // Finalize the multipart upload — MinIO assembles parts into object
+                            item.status = 'committing';
+                            render();
+                            writeLog(`[${item.file.name}] Finalizing multipart upload...`, 'info');
+
+                            const completeHeaders = { 'Content-Type': 'application/json' };
+                            if (authToken) completeHeaders['Authorization'] = `Bearer ${authToken}`;
+
+                            const completeResp = await fetch(`http://localhost:8000/data/upload_multipart/complete`, {
+                                method: 'POST',
+                                headers: completeHeaders,
+                                body: JSON.stringify({
+                                    object_key: item.objectKey,
+                                    upload_id: uploadId,
+                                    parts: completedParts.map(p => ({
+                                        part_number: p.partnumber,
+                                        etag: p.etag
+                                    }))
+                                })
+                            });
+
+                            if (!completeResp.ok) throw new Error(`Finalize failed (${completeResp.status})`);
+
+                            item.status = 'success';
+                            item.progress = 100;
+                            render();
+                            writeLog(`[${item.file.name}] All ${totalParts} parts successfully uploaded!`, 'success');
+                            uploadSuccess = true;
+                        } catch (err) {
+                            if (!navigator.onLine || err.message.toLowerCase().includes("network")) {
+                                writeLog(`[${item.file.name}] Network offline during multipart upload. Pausing...`, 'warn');
+                                item.status = 'paused';
+                                render();
+
+                                await waitForNetworkOnline();
+                                writeLog(`[${item.file.name}] Network online. Resuming remaining chunks...`, 'info');
+                                item.status = 'uploading';
+                                render();
+                            } else {
+                                item.status = 'error';
+                                item.error = err.message || "Multipart upload failed";
+                                render();
+                                writeLog(`[${item.file.name}] Multipart failed: ${item.error}`, 'error');
+                                break;
+                            }
+                        }
+                    }
+                }
+            };
+
+            // 6. Execute uploads
+            const uploadPromises = validQueue.map(({ item, meta }) => executeFileUpload(item, meta, null));
+
+            // 7. Handle conflicting items if any exist
+            if (conflictingItems.length > 0) {
+                writeLog(`Conflict detected for ${conflictingItems.length} file(s). Prompting user...`, 'warn');
+                const names = conflictingItems.map(i => i.file.name).join(', ');
+                const choice = await showConflictModal(names, null, false);
+
+                if (choice === 'cancel') {
+                    conflictingItems.forEach(item => {
+                        item.status = 'error';
+                        item.error = "Upload cancelled due to file conflict";
+                    });
+                    render();
+                } else {
+                    writeLog(`Resolving conflicting files with action: "${choice}"...`, 'info');
+                    try {
+                        const conflictPayload = conflictingItems.map(item => ({
+                            filename: item.file.name,
+                            size: item.file.size
+                        }));
+
+                        const headers = { 'Content-Type': 'application/json' };
+                        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+                        const initRetry = await fetch(`http://localhost:8000/data/upload_init`, {
+                            method: "POST",
+                            headers: headers,
+                            body: JSON.stringify(conflictPayload)
+                        });
+
+                        if (!initRetry.ok) throw new Error(`Resolution failed (${initRetry.status})`);
+                        const conflictMetas = await initRetry.json();
+
+                        conflictMetas.forEach((meta, idx) => {
+                            const item = conflictingItems[idx];
+                            uploadPromises.push(executeFileUpload(item, meta, choice));
+                        });
+                    } catch (conflictErr) {
+                        conflictingItems.forEach(item => {
+                            item.status = 'error';
+                            item.error = conflictErr.message;
+                        });
+                        render();
+                    }
+                }
+            }
+
+            await Promise.allSettled(uploadPromises);
+
+            const successCount = pendingItems.filter(f => f.status === 'success').length;
+            const failCount = pendingItems.filter(f => f.status === 'error').length;
+            writeLog(`Upload finished: ${successCount} successful, ${failCount} failed.`, successCount > 0 ? 'success' : 'warn');
+
+            toggleInputs(false);
+        }
+
+        // Direct upload XHR
+        function uploadFileXHR(url, file, onProgress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("PUT", url, true);
+                xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable && onProgress) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        onProgress(pct);
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve();
+                    } else {
+                        reject(new Error(`Storage error (${xhr.status} ${xhr.statusText})`));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error("Network connection lost"));
+                xhr.send(file);
+            });
+        }
+
+        // Multipart part upload XHR (captures ETag header)
+        function uploadPartXHR(url, chunk, onProgress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("PUT", url, true);
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable && onProgress) {
+                        onProgress(e.loaded);
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        // Extract ETag header (removing quotes)
+                        const etagHeader = xhr.getResponseHeader("ETag") || xhr.getResponseHeader("etag") || "";
+                        const cleanEtag = etagHeader.replace(/["']/g, "").trim();
+                        resolve(cleanEtag);
+                    } else {
+                        reject(new Error(`Part upload failed (${xhr.status} ${xhr.statusText})`));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error("Network connection lost during chunk upload"));
+                xhr.send(chunk);
+            });
+        }
+
+        function toggleInputs(disabled) {
+            uploadButton.disabled = disabled;
+            document.getElementById("filesInputBtn").disabled = disabled;
+            document.getElementById("folderInputBtn").disabled = disabled;
+            document.getElementById("clearBtn").disabled = disabled;
+
+            if (disabled) {
+                dropzone.style.pointerEvents = "none";
+                dropzone.style.opacity = "0.5";
+            } else {
+                dropzone.style.pointerEvents = "auto";
+                dropzone.style.opacity = "1";
+            }
+        }
+
+        function showConflictModal(name, lastVersion, isFolder) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById("conflict-modal");
+                const title = document.getElementById("conflict-modal-title");
+                const desc = document.getElementById("conflict-modal-desc");
+                const btnCancel = document.getElementById("conflict-btn-cancel");
+                const btnReplace = document.getElementById("conflict-btn-replace");
+                const btnKeepBoth = document.getElementById("conflict-btn-keepboth");
+
+                if (isFolder) {
+                    title.textContent = "Folder Conflict";
+                    desc.innerHTML = `The folder <strong>"${name}"</strong> already exists in destination. What would you like to do?`;
+                } else {
+                    title.textContent = "File Conflict";
+                    desc.innerHTML = `The file <strong>"${name}"</strong> already exists in destination. What would you like to do?`;
+                }
+
+                modal.classList.add("active");
+
+                const handleChoice = (choice) => {
+                    modal.classList.remove("active");
+                    btnCancel.onclick = null;
+                    if (btnReplace) btnReplace.onclick = null;
+                    btnKeepBoth.onclick = null;
+                    resolve(choice);
+                };
+
+                btnCancel.onclick = () => handleChoice('cancel');
+                if (btnReplace) btnReplace.onclick = () => handleChoice('replace');
+                btnKeepBoth.onclick = () => handleChoice('keep_both');
+            });
+        }
+    </script>
+</body>
+
+</html>
