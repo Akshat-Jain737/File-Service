@@ -13,8 +13,10 @@ from UTILS.func import (
     generate_object_key,
     generate_presigned_url,
     parse_size_str,
+    s3_complete_multipart_upload,
+    s3_create_multipart_upload,
 )
-from PAYLOAD.upload_payload import CompleteMultipartRequest, FileItem
+from PAYLOAD.upload_payload import CompleteMultipartRequest, FileItem, Download
 
 
 class DataServices:
@@ -31,9 +33,9 @@ class DataServices:
             if size_bytes >= MULTIPART_THRESHOLD:
                 try:
                     mp_resp = await asyncio.to_thread(
-                        s3_client.create_multipart_upload,
-                        Bucket=BUCKET_NAME,
-                        Key=obj_name,
+                        s3_create_multipart_upload,
+                        bucket=BUCKET_NAME,
+                        key=obj_name,
                     )
                     upload_id = mp_resp["UploadId"]
                 except Exception as e:
@@ -127,11 +129,11 @@ class DataServices:
 
         try:
             resp = await asyncio.to_thread(
-                s3_client.complete_multipart_upload,
-                Bucket=BUCKET_NAME,
-                Key=payload.object_key,
-                UploadId=payload.upload_id,
-                MultipartUpload={"Parts": parts},
+                s3_complete_multipart_upload,
+                bucket=BUCKET_NAME,
+                key=payload.object_key,
+                upload_id=payload.upload_id,
+                parts=parts,
             )
         except Exception as e:
             raise HTTPException(
@@ -191,7 +193,7 @@ class DataServices:
         for record in payload["Records"]:
             eventname=record['eventName']
 
-            if eventname is not None and 'ObjectCreated' in eventname:
+            if eventname is not None:
                 raw_key=record['s3']['object']['key']
                 objectkey=unquote_plus(raw_key)
                 filesize=record['s3']['object']['size']
@@ -229,3 +231,19 @@ class DataServices:
                 detail=f"Failed to complete direct upload in database: {str(e)}",
             )
         return {'status': 'sucess'}
+    
+    async def init_download(self,file_ids:Download):
+        result=[]
+        for file_id in file_ids:
+            rec = (
+                await self.session.exec(select(Files).where(Files.id == file_id))
+            ).first()
+            if not rec:
+                raise HTTPException(status_code=500, detail='file not found')
+            
+            result.append({
+                "file_id":file_id,
+                "url": generate_presigned_url(object_key=rec.object_key, method='GET'),
+            })
+        
+        return result

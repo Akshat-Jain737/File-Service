@@ -1,7 +1,7 @@
 from urllib.parse import unquote_plus
 
 from fastapi import APIRouter, Body, HTTPException, Request
-from PAYLOAD.upload_payload import CompleteMultipartRequest, FileItem, UploadRequest
+from PAYLOAD.upload_payload import CompleteMultipartRequest, Download, FileItem, UploadRequest
 from UTILS.dependencies import dep
 from UTILS.func import WEBHOOK_SECRET
 from models import UploadSession
@@ -23,6 +23,6 @@ async def upload_multipart_complete(service: dep, payload: CompleteMultipartRequ
     return await service.complete_multipart(payload)
 
 
-
-
-
+@data.post("/download_init")
+async def download_init(service: dep, payload: Download):
+    return await service.init_download(payload.file_ids)

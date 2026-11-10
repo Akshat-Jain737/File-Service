@@ -63,3 +63,7 @@ class CompleteMultipartRequest(BaseModel):
             if "parts" not in data and "partsinfo" in data:
                 data["parts"] = data["partsinfo"]
         return data
+
+
+class Download(BaseModel):
+    file_ids: list[int]
